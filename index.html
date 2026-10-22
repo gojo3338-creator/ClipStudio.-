@@ -32,10 +32,52 @@
 .trim-values{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#e6e6eb;margin-top:9px}
 @media(max-width:420px){.editor-shell{padding:9px}.timeline-track{height:66px}.trim-handle{width:20px}}
 
+
+.home-screen{display:block;max-width:900px;min-height:100vh;margin:0 auto;padding:22px 16px 28px;background:radial-gradient(ellipse at 80% 0%,rgba(19,212,228,.12),transparent 42%),#0d0d12;color:#f7f7fa}
+.wrap.editor-page{display:none}
+.home-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:34px}
+.home-brand{display:flex;align-items:center;gap:10px}.home-logo{width:42px;height:42px;display:grid;place-items:center;border-radius:14px;background:linear-gradient(135deg,#19d7e6,#1688a6);color:#071418;font-size:20px}
+.home-brand strong{display:block;font-size:18px}.home-brand span{display:block;font-size:9px;letter-spacing:2px;color:#8c8c9b;margin-top:3px}
+.home-avatar{width:40px;height:40px;display:grid;place-items:center;border:1px solid #33333d;border-radius:50%;background:#202028;color:#20d5e4;font-size:20px}
+.home-welcome{margin:12px 0 25px}.home-eyebrow{font-size:10px;letter-spacing:2px;font-weight:800;color:#19d2e1;margin:0 0 12px}
+.home-welcome h1{font-size:clamp(30px,8vw,48px);line-height:1.1;letter-spacing:-1.8px;margin:0;font-weight:850}.home-welcome h1 span{color:#20d3e2}
+.home-subtitle{max-width:430px;font-size:14px;line-height:1.65;color:#a5a5b2;margin:14px 0 0}
+.create-project{width:100%;display:flex;align-items:center;gap:14px;padding:17px;border:1px solid #26d2df66;border-radius:18px;background:linear-gradient(110deg,#15383d,#1a2229 72%);color:#fff;text-align:left}
+.create-icon{width:48px;height:48px;flex-shrink:0;display:grid;place-items:center;border-radius:14px;background:#16d2e1;color:#052329;font-size:30px}
+.create-copy{display:flex;flex-direction:column;gap:5px;flex:1}.create-copy strong{font-size:17px}.create-copy small{font-size:12px;color:#b5c3c7}.create-arrow{font-size:32px;color:#29d6e4}
+.home-section-heading{display:flex;align-items:center;justify-content:space-between;margin:30px 0 13px}.home-section-heading h2{font-size:17px;margin:0}.home-section-heading span{font-size:9px;letter-spacing:1px;color:#8b8b98}
+.home-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.home-tool{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-height:125px;padding:14px;border:1px solid #292932;border-radius:16px;background:#17171e;color:#f5f5f8;text-align:left}
+.tool-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;font-size:21px;font-weight:700}.tool-icon.teal{background:#143b40;color:#23d6e4}.tool-icon.purple{background:#302343;color:#c6a4ff}.tool-icon.orange{background:#3b2b1d;color:#ffbb72}.tool-icon.blue{background:#1d3045;color:#81bfff}
+.home-tool strong{font-size:14px}.home-tool small{font-size:11px;color:#9b9ba8}
+.home-tip{display:flex;gap:12px;align-items:flex-start;margin-top:22px;padding:15px;border:1px solid #292932;border-radius:15px;background:#15151b}.home-tip>span{color:#20d4e3;font-size:20px}.home-tip strong{font-size:12px}.home-tip p{font-size:11px;color:#a1a1ad;line-height:1.5;margin:5px 0 0}
+.home-footer{text-align:center;font-size:9px;letter-spacing:1.5px;color:#696976;margin-top:28px}.home-footer span{padding:0 6px;color:#19d2e1}
+.editor-nav{display:flex;align-items:center;gap:12px;margin-bottom:12px}.editor-nav button{background:#24242d;border:1px solid #393943;color:#f5f5f8;border-radius:11px;padding:9px 12px}.editor-nav strong{font-size:14px}
+@media(min-width:650px){.home-screen{padding:30px 28px}.home-tools{grid-template-columns:repeat(4,minmax(0,1fr))}.home-tool{min-height:140px}.home-welcome{margin-top:24px;margin-bottom:30px}}
+
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<section class="home-screen" id="homeScreen">
+  <header class="home-header">
+    <div class="home-brand"><div class="home-logo">▶</div><div><strong>ClipStudio</strong><span>AI VIDEO STUDIO</span></div></div>
+    <div class="home-avatar">✦</div>
+  </header>
+  <div class="home-welcome"><p class="home-eyebrow">KREASIKAN MOMENMU</p><h1>Edit video keren,<br><span>langsung dari HP.</span></h1><p class="home-subtitle">Potong klip, tambahkan teks, atur rasio, dan ekspor video dalam satu tempat.</p></div>
+  <button type="button" class="create-project" id="openEditorBtn"><span class="create-icon">＋</span><span class="create-copy"><strong>Edit video</strong><small>Mulai proyek baru dari galeri HP</small></span><span class="create-arrow">›</span></button>
+  <div class="home-section-heading"><h2>Alat kreator</h2><span>SIAP DIGUNAKAN</span></div>
+  <div class="home-tools">
+    <button type="button" class="home-tool" id="toolEditBtn"><span class="tool-icon teal">✂</span><strong>Edit</strong><small>Potong & atur klip</small></button>
+    <button type="button" class="home-tool" id="toolTextBtn"><span class="tool-icon purple">T</span><strong>Teks</strong><small>Tambahkan tulisan</small></button>
+    <button type="button" class="home-tool" id="toolRatioBtn"><span class="tool-icon orange">▣</span><strong>Rasio</strong><small>Vertikal & horizontal</small></button>
+    <button type="button" class="home-tool" id="toolExportBtn"><span class="tool-icon blue">↗</span><strong>Ekspor</strong><small>Simpan MP4</small></button>
+  </div>
+  <div class="home-tip"><span>✦</span><div><strong>Proyekmu, tetap di perangkat</strong><p>Video diproses langsung di browser. Pilih Edit video untuk memulai.</p></div></div>
+  <footer class="home-footer">CLIPSTUDIO AI <span>•</span> VERSI BETA</footer>
+</section>
+
+<div class="wrap editor-page" id="editorPage">
+<div class="editor-nav"><button type="button" id="backHomeBtn">‹ Beranda</button><strong>Editor video</strong></div>
 <header class="head"><div class="logo">▶</div><div><h1>ClipStudio AI</h1><p>Editor video lokal untuk kreator</p></div><span class="tag">V1 · BETA</span></header>
 <div class="layout">
 <section class="card">
@@ -87,6 +129,16 @@
 <video id="sourceVideo" playsinline muted style="display:none"></video>
 <script type="module">
 const $=id=>document.getElementById(id);
+const homeScreen=$('homeScreen'),editorPage=$('editorPage');
+function openEditorPage(){homeScreen.style.display='none';editorPage.style.display='block';window.scrollTo(0,0)}
+function returnHomePage(){editorPage.style.display='none';homeScreen.style.display='block';window.scrollTo(0,0)}
+$('openEditorBtn').addEventListener('click',openEditorPage);
+$('toolEditBtn').addEventListener('click',openEditorPage);
+$('backHomeBtn').addEventListener('click',returnHomePage);
+$('toolTextBtn').addEventListener('click',()=>{openEditorPage();setTimeout(()=>$('text').focus(),80)});
+$('toolRatioBtn').addEventListener('click',()=>{openEditorPage();setTimeout(()=>$('ratio').focus(),80)});
+$('toolExportBtn').addEventListener('click',()=>{openEditorPage();setTimeout(()=>$('exportBtn').scrollIntoView({behavior:'smooth',block:'center'}),80)});
+
 const fileInput=$('file'),video=$('sourceVideo'),status=$('status'),exportBtn=$('exportBtn'),previewBox=$('preview');
 let file=null,objectUrl=null,ffmpeg=null,ffmpegLoaded=false,busy=false,outputUrl=null;
 function setStatus(msg,kind=''){status.className='status '+kind;status.textContent=msg}
