@@ -80,19 +80,24 @@ $('seek').addEventListener('input',()=>{if(video.duration){video.currentTime=Num
 video.addEventListener('timeupdate',()=>{if(!busy)$('seek').value=video.currentTime});
 async function loadFFmpeg(){
  if(ffmpegLoaded)return;
- setStatus('Menyiapkan mesin ekspor FFmpeg. Pertahankan halaman tetap terbuka…');
+ setStatus('Memuat pustaka FFmpeg…');
  const pkg='https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm';
  const core='https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
- const {FFmpeg}=await import(pkg+'/index.js');
+ const timeout=(promise,label,ms=45000)=>Promise.race([
+  promise,
+  new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' melewati batas 45 detik. Periksa koneksi atau kompatibilitas browser.')),ms))
+ ]);
+ const {FFmpeg}=await timeout(import(pkg+'/index.js'),'Unduhan pustaka FFmpeg');
  ffmpeg=new FFmpeg();
  ffmpeg.on('log',({message})=>{if(message&&/error|invalid|failed/i.test(message))setStatus('FFmpeg: '+message,'bad')});
  ffmpeg.on('progress',({progress})=>{if(busy&&Number.isFinite(progress))setStatus('Sedang mengekspor… '+Math.max(0,Math.min(100,Math.round(progress*100)))+'%')});
  const localWorker=new URL('./ffmpeg/worker.js',document.baseURI).href;
  try{
-  await ffmpeg.load({classWorkerURL:localWorker,coreURL:core+'/ffmpeg-core.js',wasmURL:core+'/ffmpeg-core.wasm'});
+  setStatus('Memuat Worker dan mesin FFmpeg…');
+  await timeout(ffmpeg.load({classWorkerURL:localWorker,coreURL:core+'/ffmpeg-core.js',wasmURL:core+'/ffmpeg-core.wasm'}),'Pemuatan Worker/mesin FFmpeg');
   ffmpegLoaded=true;
  }catch(e){
-  ffmpeg.terminate();
+  try{ffmpeg.terminate()}catch(_){}
   ffmpeg=null;
   throw e;
  }
