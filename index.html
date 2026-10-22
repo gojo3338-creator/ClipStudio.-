@@ -370,40 +370,81 @@ function makeOverlayPNG(w,h){
 }
 exportBtn.addEventListener('click',async()=>{
  if(!file||busy)return;
- if(mediaFiles.length>1){setStatus('Pilih satu klip pada tray untuk ekspor. Penggabungan multi-klip akan ditambahkan pada tahap berikutnya.','bad');return}
- if(previewImage){setStatus('Ekspor foto sebagai video belum tersedia. Foto dapat ditambahkan dan dipratinjau, tetapi ekspor foto akan ditambahkan berikutnya.','bad');return}
- const start=seconds($('start').value),end=seconds($('end').value);
- if(end<=start||end>video.duration+.05){setStatus('Waktu akhir harus lebih besar dari waktu mulai dan tidak melebihi durasi video.','bad');return}
- if(end-start>120){setStatus('Untuk pengujian pertama, batasi hasil maksimal 120 detik agar HP tidak mudah kehabisan memori.','bad');return}
  busy=true;exportBtn.disabled=true;$('previewBtn').disabled=true;
  try{
-  await loadFFmpeg();setStatus('Menyiapkan file video…');
-  const inputName='input-video'+(file.name.toLowerCase().endsWith('.webm')?'.webm':file.name.toLowerCase().endsWith('.mov')?'.mov':'.mp4');
-  await ffmpeg.writeFile(inputName,new Uint8Array(await file.arrayBuffer()));
+  await loadFFmpeg();
   const {w,h}=dimensions(),txt=$('text').value.trim(),transition=$('transition').value;
-  const clipDuration=end-start,fadeDuration=Math.min(0.6,clipDuration/3);
-  const baseFilter=`scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},setsar=1`;
-  const fadeFilters=[];
-  if(transition==='fadein'||transition==='both')fadeFilters.push(`fade=t=in:st=0:d=${fadeDuration}`);
-  if(transition==='fadeout'||transition==='both')fadeFilters.push(`fade=t=out:st=${Math.max(0,clipDuration-fadeDuration)}:d=${fadeDuration}`);
-  const args=['-ss',String(start),'-i',inputName,'-t',String(clipDuration)];
-  if(txt){
-   const pngBytes=await makeOverlayPNG(w,h);
-   await ffmpeg.writeFile('overlay.png',new Uint8Array(pngBytes));
-   const videoChain=`[0:v]${baseFilter}[base];[base][1:v]overlay=0:0:shortest=1${fadeFilters.length?','+fadeFilters.join(','):''},format=yuv420p[vout]`;
-   args.push('-loop','1','-framerate','25','-i','overlay.png','-filter_complex',videoChain,
-    '-map','[vout]','-map','0:a?','-shortest');
+  const fadeDuration=.5;
+  const baseFilter=`scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},setsar=1,fps=25`;
+  const isMulti=mediaFiles.length>1||previewImage;
+  const selected=mediaFiles.length?mediaFiles:[file];
+  const safeExt=f=>{const m=(f.name.match(/\.([a-z0-9]+)$/i)||[])[1];return m&&m.length<6?m.toLowerCase():(f.type.startsWith('image/')?'jpg':'mp4')};
+  const addOverlayArgs=async(inputPath,outputPath,duration,hasAudio,forceSilent=false)=>{
+   const fade=[];
+   if(transition==='fadein'||transition==='both')fade.push(`fade=t=in:st=0:d=${Math.min(fadeDuration,duration/3)}`);
+   if(transition==='fadeout'||transition==='both')fade.push(`fade=t=out:st=${Math.max(0,duration-Math.min(fadeDuration,duration/3))}:d=${Math.min(fadeDuration,duration/3)}`);
+   const vf=baseFilter+(fade.length?','+fade.join(','):'');
+   const args=['-i',inputPath,'-t',String(duration)];
+   if(txt){
+    const pngBytes=await makeOverlayPNG(w,h);await ffmpeg.writeFile('overlay.png',new Uint8Array(pngBytes));
+    const fc=`[0:v]${vf}[base];[base][1:v]overlay=0:0:shortest=1,format=yuv420p[vout]`;
+    args.push('-loop','1','-framerate','25','-i','overlay.png','-filter_complex',fc,'-map','[vout]');
+   }else args.push('-vf',vf,'-map','0:v:0');
+   if(forceSilent)args.push('-an');
+   else args.push('-map','0:a?');
+   args.push('-c:v','libx264','-preset','ultrafast','-crf','25','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-movflags','+faststart',outputPath);
+   await ffmpeg.exec(args);
+  };
+  if(selected.length>1){
+   setStatus('Menggabungkan '+selected.length+' klip/foto…');
+   const concatList=[];
+   for(let i=0;i<selected.length;i++){
+    const f=selected[i],inputName=`media_${i}.${safeExt(f)}`,outName=`clip_${i}.mp4`;
+    await ffmpeg.writeFile(inputName,new Uint8Array(await f.arrayBuffer()));
+    let duration=3;
+    if(f.type.startsWith('image/')){
+      const args=['-loop','1','-framerate','25','-i',inputName,'-t','3','-vf',baseFilter+',format=yuv420p','-an','-c:v','libx264','-preset','ultrafast','-crf','25','-pix_fmt','yuv420p',outName];
+      await ffmpeg.exec(args);
+    }else{
+      const isActive=f===file;
+      let ss=0,dur;
+      if(isActive){ss=seconds($('start').value);dur=Math.max(.2,seconds($('end').value)-ss)}
+      else dur=120;
+      const args=['-ss',String(ss),'-i',inputName,'-t',String(dur),'-vf',baseFilter+',format=yuv420p','-an','-c:v','libx264','-preset','ultrafast','-crf','25','-pix_fmt','yuv420p',outName];
+      await ffmpeg.exec(args);
+    }
+    concatList.push(`file '${outName}'`);
+    setStatus(`Menyiapkan media ${i+1} dari ${selected.length}…`);
+   }
+   await ffmpeg.writeFile('concat-list.txt',new TextEncoder().encode(concatList.join('\n')));
+   await ffmpeg.exec(['-f','concat','-safe','0','-i','concat-list.txt','-c','copy','-movflags','+faststart','output.mp4']);
+  }else if(previewImage){
+   setStatus('Membuat video dari foto…');
+   const imageName='still.'+safeExt(file);await ffmpeg.writeFile(imageName,new Uint8Array(await file.arrayBuffer()));
+   const args=['-loop','1','-framerate','25','-i',imageName,'-t','3','-vf',baseFilter+(transition==='none'?'':transition==='fadein'?',fade=t=in:st=0:d=0.5':transition==='fadeout'?',fade=t=out:st=2.5:d=0.5':',fade=t=in:st=0:d=0.5,fade=t=out:st=2.5:d=0.5')+',format=yuv420p'];
+   if(txt){const pngBytes=await makeOverlayPNG(w,h);await ffmpeg.writeFile('overlay.png',new Uint8Array(pngBytes));args.splice(args.indexOf('-vf'),2);args.push('-loop','1','-framerate','25','-i','overlay.png','-filter_complex',`[0:v]${baseFilter},format=yuv420p[base];[base][1:v]overlay=0:0:shortest=1[vout]`,'-map','[vout]')}
+   args.push('-an','-c:v','libx264','-preset','ultrafast','-crf','25','-pix_fmt','yuv420p','-movflags','+faststart','output.mp4');
+   await ffmpeg.exec(args);
   }else{
-   const filter=baseFilter+(fadeFilters.length?','+fadeFilters.join(','):'');
-   args.push('-vf',filter,'-map','0:v:0','-map','0:a?');
+   const start=seconds($('start').value),end=seconds($('end').value);
+   if(end<=start||end>video.duration+.05)throw new Error('Waktu akhir harus lebih besar dari waktu mulai dan tidak melebihi durasi video.');
+   if(end-start>120)throw new Error('Untuk pengujian pertama, batasi hasil maksimal 120 detik.');
+   const inputName='input-video.'+safeExt(file);await ffmpeg.writeFile(inputName,new Uint8Array(await file.arrayBuffer()));
+   const duration=end-start,fade=[];
+   if(transition==='fadein'||transition==='both')fade.push(`fade=t=in:st=0:d=${Math.min(.6,duration/3)}`);
+   if(transition==='fadeout'||transition==='both')fade.push(`fade=t=out:st=${Math.max(0,duration-Math.min(.6,duration/3))}:d=${Math.min(.6,duration/3)}`);
+   const vf=baseFilter+(fade.length?','+fade.join(','):'');
+   const args=['-ss',String(start),'-i',inputName,'-t',String(duration)];
+   if(txt){const pngBytes=await makeOverlayPNG(w,h);await ffmpeg.writeFile('overlay.png',new Uint8Array(pngBytes));args.push('-loop','1','-framerate','25','-i','overlay.png','-filter_complex',`[0:v]${vf}[base];[base][1:v]overlay=0:0:shortest=1,format=yuv420p[vout]`,'-map','[vout]','-map','0:a?','-shortest')}
+   else args.push('-vf',vf,'-map','0:v:0','-map','0:a?');
+   args.push('-c:v','libx264','-preset','ultrafast','-crf','25','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-movflags','+faststart','output.mp4');
+   await ffmpeg.exec(args);
   }
-  args.push('-c:v','libx264','-preset','ultrafast','-crf','25','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-movflags','+faststart','output.mp4');
-  setStatus(txt?'Mengekspor video, teks, dan transisi…':'Mengekspor video dengan transisi…');
-  await ffmpeg.exec(args);
   const data=await ffmpeg.readFile('output.mp4');if(!data||!data.length)throw new Error('FFmpeg tidak menghasilkan file MP4.');
   const blob=new Blob([data.buffer],{type:'video/mp4'});if(outputUrl)URL.revokeObjectURL(outputUrl);outputUrl=URL.createObjectURL(blob);
-  $('downloadLink').href=outputUrl;$('download').style.display='block';setStatus(`Ekspor selesai: ${(blob.size/1024/1024).toFixed(1)} MB. Teks overlay ${txt?'sudah tertanam':'tidak digunakan'}. Tekan Unduh hasil MP4.`,'good');
- }catch(e){setStatus('Ekspor gagal: '+(e&&e.message?e.message:String(e))+'. Coba video MP4 pendek; jika gagal lagi, kirim pesan error ini.','bad')}
+  $('downloadLink').href=outputUrl;$('download').style.display='block';
+  setStatus(`Ekspor selesai: ${(blob.size/1024/1024).toFixed(1)} MB. ${selected.length>1?'Media digabungkan; audio sumber tidak disertakan pada ekspor gabungan.':previewImage?'Foto dibuat menjadi video 3 detik.':'Video berhasil diproses.'} Tekan Unduh hasil MP4.`,'good');
+ }catch(e){setStatus('Ekspor gagal: '+(e&&e.message?e.message:String(e))+'. Coba media lebih pendek/MP4 atau kirim pesan error ini.','bad')}
  finally{busy=false;exportBtn.disabled=!file;$('previewBtn').disabled=false}
 });
 syncTimeline();
