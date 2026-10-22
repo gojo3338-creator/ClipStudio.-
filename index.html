@@ -102,6 +102,25 @@
  .editor-page .preview canvas{max-height:360px}
 }
 
+
+/* Improved preview and multi-clip media tray */
+.editor-page .preview{position:relative;min-height:260px;height:min(46vh,480px);padding:8px;background:#07090b;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.editor-page .preview canvas{width:auto!important;height:auto!important;max-width:100%;max-height:100%;object-fit:contain;aspect-ratio:auto}
+.preview-transport{display:flex;align-items:center;gap:9px;padding:9px 2px 3px;color:#c9c9d3;font-size:12px}
+.preview-transport button{padding:8px 11px;min-width:38px;border-radius:10px}
+.preview-transport input{flex:1;min-width:0;accent-color:#20d3e2}
+.media-tray{display:flex;gap:9px;overflow-x:auto;padding:10px 2px 4px;scrollbar-width:thin}
+.media-tray-empty{font-size:12px;color:#9999a6;padding:10px 4px}
+.media-item{position:relative;flex:0 0 92px;width:92px;border:1px solid #3a3a45;background:#202028;border-radius:11px;overflow:hidden;color:#eee;cursor:pointer;padding:0;text-align:left}
+.media-item.active{border:2px solid #20d3e2;box-shadow:0 0 0 1px #20d3e233}
+.media-thumb{height:55px;display:grid;place-items:center;background:linear-gradient(135deg,#15383d,#242430);font-size:23px;overflow:hidden}
+.media-thumb img{width:100%;height:100%;object-fit:cover}
+.media-name{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:5px 6px 1px}
+.media-meta{display:block;font-size:9px;color:#a4a4b0;padding:0 6px 6px}
+.media-remove{position:absolute;top:3px;right:3px;width:21px;height:21px;padding:0;border-radius:50%;background:#101116dd;color:#fff;font-size:14px;line-height:21px}
+.editor-page .editor-tools button.active{background:#20383c;color:#fff}
+@media(min-width:760px){.editor-page .preview{height:420px}.editor-page .preview canvas{max-height:400px}}
+
 </style>
 </head>
 <body>
@@ -130,7 +149,7 @@
 <div class="layout">
 <section class="card">
 <div class="settings-title"><strong>Media & pengaturan</strong><span>EDIT CLIP</span></div>
-<div class="drop"><div style="font-size:30px">＋</div><strong>Impor video dari perangkat</strong><div class="muted small">Video tetap di perangkat; tidak diunggah ke server.</div><input id="file" type="file" accept="video/*"></div>
+<div class="drop"><div style="font-size:30px">＋</div><strong>Impor video dari perangkat</strong><div class="muted small">Video tetap di perangkat; tidak diunggah ke server.</div><input id="file" type="file" accept="video/*,image/*" multiple><div class="small" style="margin-top:8px">Pilih beberapa video/foto sekaligus.</div></div>
 <div class="fields">
 <div class="field"><label for="ratio">Rasio kanvas</label><select id="ratio"><option value="9:16">9:16 · TikTok/Reels</option><option value="1:1">1:1 · Persegi</option><option value="16:9">16:9 · YouTube</option><option value="4:5">4:5 · Feed</option><option value="source">Asli video</option></select></div>
 <div class="field"><label for="quality">Resolusi ekspor</label><select id="quality"><option value="720">720p · Disarankan</option><option value="480">480p · Lebih ringan</option><option value="1080">1080p · Berat di HP</option></select></div>
@@ -149,7 +168,7 @@
 </section>
 <section class="card">
 <h2>② Pratinjau</h2>
-<div class="preview" id="preview"><div class="empty">Pratinjau video akan muncul di sini.</div></div>
+<div class="preview" id="preview"><div class="empty">Pratinjau video/foto akan muncul di sini.</div></div><div class="preview-transport"><button type="button" class="secondary" id="previewPlayBtn">▶</button><span id="previewTime">00:00</span><input id="previewScrub" type="range" min="0" max="100" value="0" aria-label="Geser posisi pratinjau"><button type="button" class="secondary" id="previewMuteBtn">🔊</button></div><div id="mediaTray" class="media-tray"><div class="media-tray-empty">Video dan foto yang ditambahkan akan muncul di sini.</div></div>
 <div class="timeRow" style="margin-top:14px"><div><label class="small" for="seek">Posisi video</label><input class="range" id="seek" type="range" min="0" max="100" value="0"></div><div><label class="small" for="fontColor">Warna teks</label><select id="fontColor" style="width:100%;background:#101019;color:var(--text);border:1px solid var(--border);border-radius:12px;padding:10px"><option value="white">Putih</option><option value="yellow">Kuning</option><option value="red">Merah</option><option value="cyan">Biru muda</option></select></div></div>
 <div class="editor-shell" id="timelineEditor">
   <div class="timeline-top"><strong>Timeline klip</strong><span id="timelineClock">00:00 / 00:00</span></div>
@@ -202,37 +221,85 @@ $('toolExportBtn').addEventListener('click',()=>{openEditorPage();setTimeout(()=
 
 const fileInput=$('file'),video=$('sourceVideo'),status=$('status'),exportBtn=$('exportBtn'),previewBox=$('preview');
 let file=null,objectUrl=null,ffmpeg=null,ffmpegLoaded=false,busy=false,outputUrl=null;
+let mediaFiles=[],activeMediaIndex=0,previewImage=null,previewImageUrl=null;
+
 function setStatus(msg,kind=''){status.className='status '+kind;status.textContent=msg}
 function seconds(v){return Math.max(0,Number(v)||0)}
 function dimensions(){
  const r=$('ratio').value,q=Number($('quality').value);let w,h;
- if(r==='source'&&video.videoWidth){const scale=Math.min(1,q/Math.max(video.videoWidth,video.videoHeight));w=video.videoWidth*scale;h=video.videoHeight*scale}
+ if(r==='source'&&(video.videoWidth||previewImage)){const sw=video.videoWidth||previewImage.naturalWidth,sh=video.videoHeight||previewImage.naturalHeight;const scale=Math.min(1,q/Math.max(sw,sh));w=sw*scale;h=sh*scale}
  else{const [rw,rh]=r.split(':').map(Number);if(rw>=rh){w=q;h=Math.round(q*rh/rw)}else{h=q;w=Math.round(q*rw/rh)}}
  w=Math.max(2,Math.round(w/2)*2);h=Math.max(2,Math.round(h/2)*2);return {w,h}
 }
 function wrapText(ctx,text,maxWidth){const words=text.split(/\s+/),lines=[];let line='';for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);return lines}
 function drawPreview(){
- if(!file||!video.videoWidth)return;
+ if(!file)return;const source=previewImage||(video.videoWidth?video:null);if(!source)return;
  let canvas=previewBox.querySelector('canvas');if(!canvas){previewBox.innerHTML='';canvas=document.createElement('canvas');previewBox.appendChild(canvas)}
- const {w,h}=dimensions();canvas.width=w;canvas.height=h;canvas.style.width='100%';canvas.style.height='auto';
+ const {w,h}=dimensions();canvas.width=w;canvas.height=h;canvas.style.width='auto';canvas.style.height='auto';
  const ctx=canvas.getContext('2d');ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);
- const scale=Math.max(w/video.videoWidth,h/video.videoHeight),dw=video.videoWidth*scale,dh=video.videoHeight*scale;ctx.drawImage(video,(w-dw)/2,(h-dh)/2,dw,dh);
+ const sw=source.videoWidth||source.naturalWidth,sh=source.videoHeight||source.naturalHeight;if(!sw||!sh)return;
+ const scale=Math.max(w/sw,h/sh),dw=sw*scale,dh=sh*scale;ctx.drawImage(source,(w-dw)/2,(h-dh)/2,dw,dh);
  const txt=$('text').value.trim();if(txt){const fs=Number($('fontSize').value)*w/360;ctx.font=`bold ${fs}px system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=Math.max(3,fs*.16);ctx.strokeStyle='#000';ctx.fillStyle=$('fontColor').value;const lines=wrapText(ctx,txt,w*.88);let y=$('textPosition').value==='top'?fs*1.2:$('textPosition').value==='middle'?h/2-(lines.length-1)*fs*.6:h-fs*(.8+(lines.length-1)*1.2);for(const line of lines){ctx.strokeText(line,w/2,y);ctx.fillText(line,w/2,y);y+=fs*1.2}}
+ syncPreviewTransport();
+}
+
+function mediaKind(f){return f.type.startsWith('image/')?'image':'video'}
+function niceSize(n){return n<1024*1024?(n/1024).toFixed(0)+' KB':(n/1024/1024).toFixed(1)+' MB'}
+function renderMediaTray(){
+ const tray=$('mediaTray');tray.innerHTML='';
+ if(!mediaFiles.length){tray.innerHTML='<div class="media-tray-empty">Video dan foto yang ditambahkan akan muncul di sini.</div>';return}
+ mediaFiles.forEach((f,i)=>{
+  const item=document.createElement('button');item.type='button';item.className='media-item'+(i===activeMediaIndex?' active':'');
+  const thumb=document.createElement('div');thumb.className='media-thumb';
+  if(mediaKind(f)==='image'){const im=document.createElement('img');im.src=URL.createObjectURL(f);im.alt='';thumb.appendChild(im)}else thumb.textContent='▶';
+  const name=document.createElement('span');name.className='media-name';name.textContent=f.name;
+  const meta=document.createElement('span');meta.className='media-meta';meta.textContent=(mediaKind(f)==='image'?'Foto':'Video')+' · '+niceSize(f.size);
+  const remove=document.createElement('span');remove.className='media-remove';remove.textContent='×';remove.title='Hapus media';
+  item.append(thumb,name,meta,remove);
+  item.addEventListener('click',ev=>{if(ev.target===remove){ev.stopPropagation();mediaFiles.splice(i,1);activeMediaIndex=Math.max(0,Math.min(activeMediaIndex,mediaFiles.length-1));loadActiveMedia();renderMediaTray();return}activeMediaIndex=i;loadActiveMedia();renderMediaTray()});
+  tray.appendChild(item);
+ });
+}
+function loadActiveMedia(){
+ if(!mediaFiles.length){file=null;exportBtn.disabled=true;video.pause();previewImage=null;previewBox.innerHTML='<div class="empty">Pratinjau video/foto akan muncul di sini.</div>';renderMediaTray();syncTimeline();return}
+ file=mediaFiles[activeMediaIndex];exportBtn.disabled=false;
+ if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl=null}
+ if(previewImageUrl){URL.revokeObjectURL(previewImageUrl);previewImageUrl=null}
+ if(mediaKind(file)==='image'){
+  video.pause();previewImage=new Image();previewImageUrl=URL.createObjectURL(file);
+  previewImage.onload=()=>{$('start').value='0';$('end').value='3';$('end').max='3';$('seek').max='3';$('seek').value='0';drawPreview();setStatus('Foto siap: '+file.name+' · durasi klip 3 detik','good');syncTimeline()};
+  previewImage.src=previewImageUrl;
+ }else{
+  previewImage=null;objectUrl=URL.createObjectURL(file);video.src=objectUrl;
+  video.onloadedmetadata=()=>{$('start').value='0';$('end').value=Math.min(15,video.duration).toFixed(1);$('end').max=video.duration;$('seek').max=video.duration;$('seek').value=0;setStatus(`Video siap: ${file.name} · ${video.videoWidth}×${video.videoHeight} · ${video.duration.toFixed(1)} detik`,'good');drawPreview();syncTimeline();syncPreviewTransport()};
+  video.onerror=()=>setStatus('Browser tidak dapat membaca media ini. Coba MP4 H.264 atau pilih file lain.','bad');
+ }
+ renderMediaTray();
 }
 fileInput.addEventListener('change',()=>{
- const chosen=fileInput.files&&fileInput.files[0];if(!chosen)return;file=chosen;if(objectUrl)URL.revokeObjectURL(objectUrl);objectUrl=URL.createObjectURL(file);video.src=objectUrl;
- video.onloadedmetadata=()=>{$('start').value='0';$('end').value=Math.min(15,video.duration).toFixed(1);$('end').max=video.duration;$('seek').max=video.duration;$('seek').value=0;exportBtn.disabled=false;setStatus(`Video siap: ${file.name} · ${video.videoWidth}×${video.videoHeight} · ${video.duration.toFixed(1)} detik`,'good');drawPreview();syncTimeline()};
- video.onerror=()=>setStatus('Browser tidak dapat membaca video ini. Coba MP4 H.264 atau pilih file lain.','bad');
+ const chosen=Array.from(fileInput.files||[]).filter(f=>f.type.startsWith('video/')||f.type.startsWith('image/'));
+ if(!chosen.length)return;
+ mediaFiles=mediaFiles.concat(chosen);activeMediaIndex=Math.max(0,mediaFiles.length-chosen.length);
+ loadActiveMedia();renderMediaTray();
 });
 $('previewBtn').addEventListener('click',()=>{if(!file)return setStatus('Pilih video terlebih dahulu.','bad');drawPreview();setStatus('Pratinjau diperbarui.','good')});
 ['ratio','quality','text','fontSize','textPosition','fontColor','transition'].forEach(id=>$(id).addEventListener('input',drawPreview));
 $('seek').addEventListener('input',()=>{if(video.duration){video.currentTime=Number($('seek').value);drawPreview()}});
 
-video.addEventListener('timeupdate',()=>{if(!busy){$('seek').value=video.currentTime;syncTimeline()}});
+video.addEventListener('timeupdate',()=>{if(!busy){$('seek').value=video.currentTime;syncTimeline();drawPreview();syncPreviewTransport()}});
 const track=$('timelineTrack'),trimStartHandle=$('trimStartHandle'),trimEndHandle=$('trimEndHandle');
 let dragMode=null;
+function syncPreviewTransport(){
+ const t=previewImage?0:(Number(video.currentTime)||0),d=previewImage?3:(Number(video.duration)||0);
+ if($('previewTime'))$('previewTime').textContent=fmtTime(t)+' / '+fmtTime(d);
+ if($('previewScrub')){$('previewScrub').max=Math.max(1,d);$('previewScrub').value=t}
+ if($('previewPlayBtn'))$('previewPlayBtn').textContent=video.paused?'▶':'Ⅱ';
+}
+$('previewPlayBtn').addEventListener('click',()=>{if(!file)return setStatus('Tambahkan video atau foto terlebih dahulu.','bad');if(previewImage){setStatus('Foto akan tampil selama 3 detik pada hasil ekspor.');return}if(video.paused)video.play().catch(()=>{});else video.pause();syncPreviewTransport()});
+$('previewScrub').addEventListener('input',()=>{if(video.duration&&!previewImage){video.currentTime=Number($('previewScrub').value);drawPreview();syncTimeline()}});
+$('previewMuteBtn').addEventListener('click',()=>{video.muted=!video.muted;$('previewMuteBtn').textContent=video.muted?'🔇':'🔊'});
 function fmtTime(sec){sec=Math.max(0,Number(sec)||0);const m=Math.floor(sec/60),s=Math.floor(sec%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
-function clipDuration(){return Math.max(.1,Number(video.duration)||Number($('end').value)||15)}
+function clipDuration(){return Math.max(.1,previewImage?3:(Number(video.duration)||Number($('end').value)||15))}
 function clampTrim(){
  const dur=clipDuration(),minGap=Math.min(.2,dur/10);
  let a=Math.max(0,Math.min(dur,seconds($('start').value)));
@@ -303,6 +370,8 @@ function makeOverlayPNG(w,h){
 }
 exportBtn.addEventListener('click',async()=>{
  if(!file||busy)return;
+ if(mediaFiles.length>1){setStatus('Pilih satu klip pada tray untuk ekspor. Penggabungan multi-klip akan ditambahkan pada tahap berikutnya.','bad');return}
+ if(previewImage){setStatus('Ekspor foto sebagai video belum tersedia. Foto dapat ditambahkan dan dipratinjau, tetapi ekspor foto akan ditambahkan berikutnya.','bad');return}
  const start=seconds($('start').value),end=seconds($('end').value);
  if(end<=start||end>video.duration+.05){setStatus('Waktu akhir harus lebih besar dari waktu mulai dan tidak melebihi durasi video.','bad');return}
  if(end-start>120){setStatus('Untuk pengujian pertama, batasi hasil maksimal 120 detik agar HP tidak mudah kehabisan memori.','bad');return}
