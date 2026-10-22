@@ -1,0 +1,12 @@
+{
+  "name": "ClipStudio AI",
+  "short_name": "ClipStudio",
+  "description": "Editor video lokal untuk kreator",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d0d14",
+  "theme_color": "#11111a",
+  "orientation": "any",
+  "icons": []
+}
