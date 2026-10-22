@@ -82,7 +82,7 @@ async function loadFFmpeg(){
  if(ffmpegLoaded)return;
  setStatus('Memuat pustaka FFmpeg…');
  const pkg='https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm';
- const core='https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+ const core='https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
  const timeout=(promise,label,ms=45000)=>Promise.race([
   promise,
   new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' melewati batas 45 detik. Periksa koneksi atau kompatibilitas browser.')),ms))
