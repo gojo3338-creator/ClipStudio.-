@@ -1,9 +1,11 @@
-ekspor konstanta MIME_TYPE_JAVASCRIPT = "teks/javascript";
-ekspor konstanta MIME_TYPE_WASM = "aplikasi/wasm";
-ekspor konstanta CORE_VERSION = "0.12.6";
+
+export const MIME_TYPE_JAVASCRIPT = "text/javascript";
+export const MIME_TYPE_WASM = "application/wasm";
+export const CORE_VERSION = "0.12.6";
 export const CORE_URL = `https://unpkg.com/@ffmpeg/core@${CORE_VERSION}/dist/umd/ffmpeg-core.js`;
-ekspor variabel FFMessageType;
-(fungsi (FFMessageType) {
+
+export var FFMessageType;
+(function (FFMessageType) {
     FFMessageType["LOAD"] = "LOAD";
     FFMessageType["EXEC"] = "EXEC";
     FFMessageType["WRITE_FILE"] = "WRITE_FILE";
