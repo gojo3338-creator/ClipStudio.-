@@ -9,7 +9,7 @@
 <title>ClipStudio AI — Editor Video</title>
 <style>
 :root{color-scheme:dark;--bg:#0d0d14;--panel:#181824;--panel2:#202031;--border:#303044;--text:#f6f4ff;--muted:#aaa8be;--accent:#c4a2ff;--accent2:#f0a6df;--good:#73dfbd;--bad:#ff9caa}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#21182f 0,#0d0d14 45%);color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}button,input,select{font:inherit}button{border:0;border-radius:14px;padding:13px 16px;background:linear-gradient(100deg,var(--accent),var(--accent2));color:#191421;font-weight:750;cursor:pointer}button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}button:disabled{opacity:.45;cursor:not-allowed}.wrap{max-width:980px;margin:auto;padding:18px 14px 44px}.head{display:flex;align-items:center;gap:12px;margin:8px 0 18px}.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(140deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#17131e;font-size:23px}.head h1{font-size:22px;line-height:1.15;margin:0}.head p{margin:4px 0 0;color:var(--muted);font-size:13px}.tag{margin-left:auto;border:1px solid var(--border);padding:6px 10px;border-radius:99px;color:var(--good);font-size:12px;white-space:nowrap}.layout{display:grid;grid-template-columns:1fr;gap:14px}.card{background:rgba(24,24,36,.94);border:1px solid var(--border);border-radius:22px;padding:17px;min-width:0}.card h2{font-size:18px;margin:0 0 14px}.muted{color:var(--muted)}.drop{border:1px dashed #77648f;border-radius:18px;padding:22px 14px;text-align:center;background:#171521}.drop strong{display:block;font-size:17px;margin:6px 0}.drop input{max-width:100%;margin:12px auto 0}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:15px 0}.field label{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}.field select,.field input[type=number],.field input[type=text]{width:100%;background:#101019;color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:46px}.preview{background:#08080c;border-radius:16px;overflow:hidden;display:grid;place-items:center;min-height:220px;position:relative}.preview canvas{display:block;max-width:100%;max-height:58vh;object-fit:contain;background:#08080c}.empty{padding:28px;text-align:center;color:var(--muted)}.row{display:flex;gap:9px;flex-wrap:wrap}.row>*{flex:1}.range{width:100%;accent-color:var(--accent)}.timeRow{display:grid;grid-template-columns:1fr 1fr;gap:12px}.status{margin-top:12px;padding:11px 12px;background:#11111a;border-radius:12px;color:var(--muted);font-size:13px;overflow-wrap:anywhere}.status.good{color:var(--good)}.status.bad{color:var(--bad)}.small{font-size:12px;color:var(--muted)}.full{width:100%;margin-top:10px}.check{display:flex;gap:9px;align-items:center;color:var(--muted);font-size:13px;margin-top:12px}.check input{width:18px;height:18px}.notice{font-size:13px;color:var(--muted);line-height:1.55}.download{display:none;margin-top:12px}.footer{text-align:center;color:#77758b;font-size:12px;margin:20px 0 0}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#21182f 0,#0d0d14 45%);color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}button,input,select{font:inherit}button{border:0;border-radius:14px;padding:13px 16px;background:linear-gradient(100deg,var(--accent),var(--accent2));color:#191421;font-weight:750;cursor:pointer}button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}button:disabled{opacity:.45;cursor:not-allowed}.wrap{max-width:980px;margin:auto;padding:18px 14px 44px}.head{display:flex;align-items:center;gap:12px;margin:8px 0 18px}.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(140deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#17131e;font-size:23px}.head h1{font-size:22px;line-height:1.15;margin:0}.head p{margin:4px 0 0;color:var(--muted);font-size:13px}.tag{margin-left:auto;border:1px solid var(--border);padding:6px 10px;border-radius:99px;color:var(--good);font-size:12px;white-space:nowrap}.layout{display:grid;grid-template-columns:1fr;gap:14px}.card{background:rgba(24,24,36,.94);border:1px solid var(--border);border-radius:22px;padding:17px;min-width:0}.card h2{font-size:18px;margin:0 0 14px}.muted{color:var(--muted)}.drop{border:1px dashed #77648f;border-radius:18px;padding:22px 14px;text-align:center;background:#171521}.drop strong{display:block;font-size:17px;margin:6px 0}.drop input{max-width:100%;margin:12px auto 0}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:15px 0}.field label{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}.field select,.field input[type=number],.field input[type=text]{width:100%;background:#101019;color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:46px}.preview{background:#08080c;border-radius:16px;overflow:hidden;display:grid;place-items:center;min-height:220px;position:relative}.preview canvas{display:block;max-width:100%;max-height:58vh;object-fit:contain;background:#08080c}.empty{padding:28px;text-align:center;color:var(--muted)}.row{display:flex;gap:9px;flex-wrap:wrap}.row>*{flex:1}.range{width:100%;accent-color:var(--accent)}.timeRow{display:grid;grid-template-columns:1fr 1fr;gap:12px}.status{margin-top:12px;padding:11px 12px;background:#11111a;border-radius:12px;color:var(--muted);font-size:13px;overflow-wrap:anywhere}.status.good{color:var(--good)}.status.bad{color:var(--bad)}.small{font-size:12px;color:var(--muted)}.full{width:100%;margin-top:10px}.download{display:none;margin-top:12px}.footer{text-align:center;color:#77758b;font-size:12px;margin:20px 0 0}.notice{font-size:13px;color:var(--muted);line-height:1.55}
 @media(min-width:760px){.wrap{padding:26px}.layout{grid-template-columns:1fr 1fr}.head h1{font-size:26px}.card{padding:20px}.preview{min-height:360px}}
 </style>
 </head>
@@ -36,10 +36,10 @@
 <h2>② Pratinjau</h2>
 <div class="preview" id="preview"><div class="empty">Pratinjau video akan muncul di sini.</div></div>
 <div class="timeRow" style="margin-top:14px"><div><label class="small" for="seek">Posisi video</label><input class="range" id="seek" type="range" min="0" max="100" value="0"></div><div><label class="small" for="fontSize">Ukuran teks</label><input class="range" id="fontSize" type="range" min="14" max="48" value="24"></div></div>
-<p class="notice">Versi pertama fokus pada impor, potong durasi, rasio kanvas, teks overlay, dan ekspor lokal. Belum ada timeline multi-klip, musik, transisi, atau subtitle otomatis.</p>
+<p class="notice">Versi ini mendukung impor video, potong durasi, rasio kanvas, teks overlay pada pratinjau, dan ekspor MP4 lokal.</p>
 </section>
 </div>
-<div class="card" style="margin-top:14px"><h2>③ Cara kerja & batasan</h2><p class="notice">Ekspor memakai FFmpeg.wasm yang diunduh dari CDN saat dibutuhkan. Ekspor dilakukan di browser, bukan server. Untuk menjaga kompatibilitas, versi ini menggunakan proses transkode MP4 H.264/AAC. Jika browser/HP kehabisan memori, video sangat panjang atau resolusi tinggi dapat gagal. Gunakan Chrome Android terbaru dan uji video pendek dahulu. Tidak ada jaminan semua format input bisa dibaca.</p><p class="notice">Aplikasi ini adalah PWA dasar. Instalasi ke layar utama didukung pada browser yang kompatibel setelah di-host lewat HTTPS. Ini bukan APK Android native. MP4 dapat berukuran besar dan ekspor bisa memakan waktu.</p></div>
+<div class="card" style="margin-top:14px"><h2>③ Cara kerja & batasan</h2><p class="notice">Ekspor memakai FFmpeg.wasm yang diunduh dari CDN saat dibutuhkan. Ekspor dilakukan di browser, bukan server. Gunakan Chrome Android terbaru dan uji video pendek dahulu. Video panjang atau resolusi tinggi dapat gagal jika memori HP tidak cukup.</p><p class="notice">Aplikasi ini adalah PWA dasar, bukan APK Android native. MP4 dapat berukuran besar dan ekspor bisa memakan waktu.</p></div>
 <div class="footer">ClipStudio AI · V1 · Pemrosesan lokal · Tidak ada akun atau pembayaran</div>
 </div>
 <video id="sourceVideo" playsinline muted style="display:none"></video>
@@ -50,9 +50,9 @@ let file=null, objectUrl=null, ffmpeg=null, ffmpegLoaded=false, busy=false, outp
 function setStatus(msg,kind=''){status.className='status '+kind;status.textContent=msg}
 function seconds(v){return Math.max(0,Number(v)||0)}
 function dimensions(){
- const r=$('ratio').value, q=Number($('quality').value);
+ const r=$('ratio').value,q=Number($('quality').value);
  let w,h;
- if(r==='source'&&video.videoWidth){w=video.videoWidth;h=video.videoHeight}
+ if(r==='source'&&video.videoWidth){const scale=Math.min(1,q/Math.max(video.videoWidth,video.videoHeight));w=video.videoWidth*scale;h=video.videoHeight*scale}
  else {const [rw,rh]=r.split(':').map(Number);if(rw>=rh){w=q;h=Math.round(q*rh/rw)}else{h=q;w=Math.round(q*rw/rh)}}
  w=Math.max(2,Math.round(w/2)*2);h=Math.max(2,Math.round(h/2)*2);return {w,h}
 }
@@ -60,7 +60,7 @@ function drawPreview(){
  if(!file||!video.videoWidth)return;
  let canvas=previewBox.querySelector('canvas');
  if(!canvas){previewBox.innerHTML='';canvas=document.createElement('canvas');previewBox.appendChild(canvas)}
- const {w,h}=dimensions(), dpr=Math.min(window.devicePixelRatio||1,2);
+ const {w,h}=dimensions();
  canvas.width=w;canvas.height=h;canvas.style.width='100%';canvas.style.height='auto';
  const ctx=canvas.getContext('2d');ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);
  const scale=Math.max(w/video.videoWidth,h/video.videoHeight),dw=video.videoWidth*scale,dh=video.videoHeight*scale;
@@ -83,10 +83,7 @@ async function loadFFmpeg(){
  setStatus('Memuat pustaka FFmpeg…');
  const pkg='https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm';
  const core='https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
- const timeout=(promise,label,ms=45000)=>Promise.race([
-  promise,
-  new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' melewati batas 45 detik. Periksa koneksi atau kompatibilitas browser.')),ms))
- ]);
+ const timeout=(promise,label,ms=45000)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' melewati batas 45 detik. Periksa koneksi atau kompatibilitas browser.')),ms))]);
  const {FFmpeg}=await timeout(import(pkg+'/index.js'),'Unduhan pustaka FFmpeg');
  ffmpeg=new FFmpeg();
  ffmpeg.on('log',({message})=>{if(message&&/error|invalid|failed/i.test(message))setStatus('FFmpeg: '+message,'bad')});
@@ -96,11 +93,7 @@ async function loadFFmpeg(){
   setStatus('Memuat Worker dan mesin FFmpeg…');
   await timeout(ffmpeg.load({classWorkerURL:localWorker,coreURL:core+'/ffmpeg-core.js',wasmURL:core+'/ffmpeg-core.wasm'}),'Pemuatan Worker/mesin FFmpeg');
   ffmpegLoaded=true;
- }catch(e){
-  try{ffmpeg.terminate()}catch(_){}
-  ffmpeg=null;
-  throw e;
- }
+ }catch(e){try{ffmpeg.terminate()}catch(_){}ffmpeg=null;throw e}
 }
 exportBtn.addEventListener('click',async()=>{
  if(!file||busy)return;
@@ -122,10 +115,10 @@ exportBtn.addEventListener('click',async()=>{
   if(outputUrl)URL.revokeObjectURL(outputUrl);outputUrl=URL.createObjectURL(blob);
   $('downloadLink').href=outputUrl;$('download').style.display='block';
   setStatus(`Ekspor selesai: ${(blob.size/1024/1024).toFixed(1)} MB. Tekan Unduh hasil MP4.`,'good');
- }catch(e){setStatus('Ekspor gagal: '+(e&&e.message?e.message:String(e))+'. Pastikan internet stabil, coba Chrome terbaru, lalu coba video MP4 pendek. Jika pesan menyebut Worker/CDN, beri tahu saya.','bad')}
+ }catch(e){setStatus('Ekspor gagal: '+(e&&e.message?e.message:String(e))+'. Pastikan internet stabil, coba Chrome terbaru, lalu coba video MP4 pendek.','bad')}
  finally{busy=false;exportBtn.disabled=!file;$('previewBtn').disabled=false}
 });
-if('serviceWorker' in navigator && location.protocol.startsWith('http')){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+if('serviceWorker' in navigator&&location.protocol.startsWith('http')){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
 </script>
 </body>
 </html>
