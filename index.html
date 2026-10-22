@@ -84,26 +84,17 @@ async function loadFFmpeg(){
  const pkg='https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm';
  const core='https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
  const {FFmpeg}=await import(pkg+'/index.js');
- // Chrome tidak mengizinkan Worker utama berasal langsung dari origin CDN.
- // Ambil worker sebagai teks lalu ubah impor relatif menjadi URL CDN absolut.
- const workerResponse=await fetch(pkg+'/worker.js');
- if(!workerResponse.ok)throw new Error('Worker FFmpeg tidak bisa diunduh dari CDN.');
- let workerText=await workerResponse.text();
- workerText=workerText
-   .replaceAll('"./const.js"', '"'+pkg+'/const.js"')
-   .replaceAll("'./const.js'", "'"+pkg+"/const.js'")
-   .replaceAll('"./errors.js"', '"'+pkg+'/errors.js"')
-   .replaceAll("'./errors.js'", "'"+pkg+"/errors.js'");
- const workerBlobURL=URL.createObjectURL(new Blob([workerText],{type:'text/javascript'}));
  ffmpeg=new FFmpeg();
  ffmpeg.on('log',({message})=>{if(message&&/error|invalid|failed/i.test(message))setStatus('FFmpeg: '+message,'bad')});
  ffmpeg.on('progress',({progress})=>{if(busy&&Number.isFinite(progress))setStatus('Sedang mengekspor… '+Math.max(0,Math.min(100,Math.round(progress*100)))+'%')});
- try {
-   await ffmpeg.load({classWorkerURL:workerBlobURL,coreURL:core+'/ffmpeg-core.js',wasmURL:core+'/ffmpeg-core.wasm'});
-   ffmpegLoaded=true;
- } catch(e) {
-   URL.revokeObjectURL(workerBlobURL);
-   throw e;
+ const localWorker=new URL('./ffmpeg/worker.js',document.baseURI).href;
+ try{
+  await ffmpeg.load({classWorkerURL:localWorker,coreURL:core+'/ffmpeg-core.js',wasmURL:core+'/ffmpeg-core.wasm'});
+  ffmpegLoaded=true;
+ }catch(e){
+  ffmpeg.terminate();
+  ffmpeg=null;
+  throw e;
  }
 }
 exportBtn.addEventListener('click',async()=>{
