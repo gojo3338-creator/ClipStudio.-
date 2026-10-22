@@ -1,150 +1,150 @@
 /// <reference no-default-lib="true" />
 /// <reference lib="esnext" />
 /// <reference lib="webworker" />
-impor { CORE_URL, FFMessageType } dari "./const.js";
-impor { ERROR_UNKNOWN_MESSAGE_TYPE, ERROR_NOT_LOADED, ERROR_IMPORT_FAILURE, } dari "./errors.js";
-biarkan ffmpeg;
+import { CORE_URL, FFMessageType } from "./const.js";
+import { ERROR_UNKNOWN_MESSAGE_TYPE, ERROR_NOT_LOADED, ERROR_IMPORT_FAILURE, } from "./errors.js";
+let ffmpeg;
 const load = async ({ coreURL: _coreURL, wasmURL: _wasmURL, workerURL: _workerURL, }) => {
-    konstanta pertama = !ffmpeg;
-    mencoba {
-        jika (!_coreURL)
+    const first = !ffmpeg;
+    try {
+        if (!_coreURL)
             _coreURL = CORE_URL;
-        // ketika tipe web worker adalah `classic`.
-        imporScripts(_coreURL);
+        // when web worker type is `classic`.
+        importScripts(_coreURL);
     }
-    menangkap {
-        jika (!_coreURL)
+    catch {
+        if (!_coreURL)
             _coreURL = CORE_URL.replace('/umd/', '/esm/');
-        // ketika tipe web worker adalah `module`.
+        // when web worker type is `module`.
         self.createFFmpegCore = (await import(
         /* webpackIgnore: true */ /* @vite-ignore */ _coreURL)).default;
-        jika (!self.createFFmpegCore) {
-            lemparkan ERROR_IMPORT_FAILURE;
+        if (!self.createFFmpegCore) {
+            throw ERROR_IMPORT_FAILURE;
         }
     }
     const coreURL = _coreURL;
     const wasmURL = _wasmURL ? _wasmURL : _coreURL.replace(/.js$/g, ".wasm");
-    konstanta workerURL = _workerURL
-        ?_workerURL
+    const workerURL = _workerURL
+        ? _workerURL
         : _coreURL.replace(/.js$/g, ".worker.js");
     ffmpeg = await self.createFFmpegCore({
-        // Memperbaiki kesalahan `Overload resolution failed.` saat menggunakan ffmpeg-core multi-threaded.
-        // WasmURL dan workerURL dienkode dalam URL sebagai solusi sementara untuk memperbaiki masalah locateFile.
+        // Fix `Overload resolution failed.` when using multi-threaded ffmpeg-core.
+        // Encoded wasmURL and workerURL in the URL as a hack to fix locateFile issue.
         mainScriptUrlOrBlob: `${coreURL}#${btoa(JSON.stringify({ wasmURL, workerURL }))}`,
     });
     ffmpeg.setLogger((data) => self.postMessage({ type: FFMessageType.LOG, data }));
     ffmpeg.setProgress((data) => self.postMessage({
-        tipe: FFMessageType.PROGRESS,
+        type: FFMessageType.PROGRESS,
         data,
     }));
-    kembali pertama;
+    return first;
 };
 const exec = ({ args, timeout = -1 }) => {
     ffmpeg.setTimeout(timeout);
     ffmpeg.exec(...args);
     const ret = ffmpeg.ret;
     ffmpeg.reset();
-    kembali ret;
+    return ret;
 };
 const writeFile = ({ path, data }) => {
     ffmpeg.FS.writeFile(path, data);
-    kembalikan nilai benar;
+    return true;
 };
 const readFile = ({ path, encoding }) => ffmpeg.FS.readFile(path, { encoding });
-// TODO: periksa apakah penghapusan berhasil.
+// TODO: check if deletion works.
 const deleteFile = ({ path }) => {
     ffmpeg.FS.unlink(path);
-    kembalikan nilai benar;
+    return true;
 };
 const rename = ({ oldPath, newPath }) => {
     ffmpeg.FS.rename(oldPath, newPath);
-    kembalikan nilai benar;
+    return true;
 };
-// TODO: periksa apakah pembuatan berhasil.
+// TODO: check if creation works.
 const createDir = ({ path }) => {
     ffmpeg.FS.mkdir(path);
-    kembalikan nilai benar;
+    return true;
 };
 const listDir = ({ path }) => {
     const names = ffmpeg.FS.readdir(path);
     const nodes = [];
-    untuk (konstanta nama dari nama-nama) {
+    for (const name of names) {
         const stat = ffmpeg.FS.stat(`${path}/${name}`);
         const isDir = ffmpeg.FS.isDir(stat.mode);
         nodes.push({ name, isDir });
     }
-    mengembalikan node;
+    return nodes;
 };
-// TODO: periksa apakah penghapusan berhasil.
+// TODO: check if deletion works.
 const deleteDir = ({ path }) => {
     ffmpeg.FS.rmdir(path);
-    kembalikan nilai benar;
+    return true;
 };
 const mount = ({ fsType, options, mountPoint }) => {
-    konstanta str = fsType;
+    const str = fsType;
     const fs = ffmpeg.FS.filesystems[str];
-    jika (!fs)
-        kembalikan false;
+    if (!fs)
+        return false;
     ffmpeg.FS.mount(fs, options, mountPoint);
-    kembalikan nilai benar;
+    return true;
 };
 const unmount = ({ mountPoint }) => {
     ffmpeg.FS.unmount(mountPoint);
-    kembalikan nilai benar;
+    return true;
 };
 self.onmessage = async ({ data: { id, type, data: _data }, }) => {
-    konstanta trans = [];
-    biarkan data;
-    mencoba {
-        jika (tipe !== FFMessageType.LOAD && !ffmpeg)
-            lemparkan ERROR_NOT_LOADED; // eslint-disable-line
-        saklar (tipe) {
-            kasus FFMessageType.LOAD:
+    const trans = [];
+    let data;
+    try {
+        if (type !== FFMessageType.LOAD && !ffmpeg)
+            throw ERROR_NOT_LOADED; // eslint-disable-line
+        switch (type) {
+            case FFMessageType.LOAD:
                 data = await load(_data);
-                merusak;
-            kasus FFMessageType.EXEC:
+                break;
+            case FFMessageType.EXEC:
                 data = exec(_data);
-                merusak;
-            kasus FFMessageType.WRITE_FILE:
+                break;
+            case FFMessageType.WRITE_FILE:
                 data = writeFile(_data);
-                merusak;
-            kasus FFMessageType.READ_FILE:
+                break;
+            case FFMessageType.READ_FILE:
                 data = readFile(_data);
-                merusak;
-            kasus FFMessageType.DELETE_FILE:
+                break;
+            case FFMessageType.DELETE_FILE:
                 data = deleteFile(_data);
-                merusak;
-            kasus FFMessageType.RENAME:
-                data = ganti nama(_data);
-                merusak;
-            kasus FFMessageType.CREATE_DIR:
+                break;
+            case FFMessageType.RENAME:
+                data = rename(_data);
+                break;
+            case FFMessageType.CREATE_DIR:
                 data = createDir(_data);
-                merusak;
-            kasus FFMessageType.LIST_DIR:
+                break;
+            case FFMessageType.LIST_DIR:
                 data = listDir(_data);
-                merusak;
-            kasus FFMessageType.DELETE_DIR:
+                break;
+            case FFMessageType.DELETE_DIR:
                 data = deleteDir(_data);
-                merusak;
-            kasus FFMessageType.MOUNT:
+                break;
+            case FFMessageType.MOUNT:
                 data = mount(_data);
-                merusak;
-            kasus FFMessageType.UNMOUNT:
+                break;
+            case FFMessageType.UNMOUNT:
                 data = unmount(_data);
-                merusak;
-            bawaan:
-                lemparkan ERROR_UNKNOWN_MESSAGE_TYPE;
+                break;
+            default:
+                throw ERROR_UNKNOWN_MESSAGE_TYPE;
         }
     }
-    tangkap (e) {
+    catch (e) {
         self.postMessage({
-            pengenal,
-            tipe: FFMessageType.ERROR,
+            id,
+            type: FFMessageType.ERROR,
             data: e.toString(),
         });
-        kembali;
+        return;
     }
-    jika (data instanceof Uint8Array) {
+    if (data instanceof Uint8Array) {
         trans.push(data.buffer);
     }
     self.postMessage({ id, type, data }, trans);
