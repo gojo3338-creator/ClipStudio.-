@@ -26,6 +26,7 @@
 <div class="field"><label for="start">Mulai (detik)</label><input id="start" type="number" min="0" step="0.1" value="0"></div>
 <div class="field"><label for="end">Akhir (detik)</label><input id="end" type="number" min="0.1" step="0.1" value="15"></div>
 </div>
+<div class="field"><label for="transition">Transisi video</label><select id="transition"><option value="none">Tanpa transisi</option><option value="fadein">Fade in (muncul perlahan)</option><option value="fadeout">Fade out (menghilang perlahan)</option><option value="both" selected>Fade in + fade out</option></select><p class="small">Efek diterapkan di awal/akhir video yang diekspor.</p></div>
 <div class="field"><label for="text">Teks overlay (ikut tertanam di ekspor)</label><input id="text" type="text" maxlength="120" placeholder="Tulis teks yang ingin ditampilkan"></div>
 <div class="fields">
 <div class="field"><label for="fontSize">Ukuran teks</label><select id="fontSize"><option value="24">Kecil</option><option value="36" selected>Sedang</option><option value="48">Besar</option></select></div>
@@ -73,7 +74,7 @@ fileInput.addEventListener('change',()=>{
  video.onerror=()=>setStatus('Browser tidak dapat membaca video ini. Coba MP4 H.264 atau pilih file lain.','bad');
 });
 $('previewBtn').addEventListener('click',()=>{if(!file)return setStatus('Pilih video terlebih dahulu.','bad');drawPreview();setStatus('Pratinjau diperbarui.','good')});
-['ratio','quality','text','fontSize','textPosition','fontColor'].forEach(id=>$(id).addEventListener('input',drawPreview));
+['ratio','quality','text','fontSize','textPosition','fontColor','transition'].forEach(id=>$(id).addEventListener('input',drawPreview));
 $('seek').addEventListener('input',()=>{if(video.duration){video.currentTime=Number($('seek').value);drawPreview()}});
 video.addEventListener('timeupdate',()=>{if(!busy)$('seek').value=video.currentTime});
 async function loadFFmpeg(){
@@ -117,20 +118,25 @@ exportBtn.addEventListener('click',async()=>{
   await loadFFmpeg();setStatus('Menyiapkan file video…');
   const inputName='input-video'+(file.name.toLowerCase().endsWith('.webm')?'.webm':file.name.toLowerCase().endsWith('.mov')?'.mov':'.mp4');
   await ffmpeg.writeFile(inputName,new Uint8Array(await file.arrayBuffer()));
-  const {w,h}=dimensions(),txt=$('text').value.trim();
-  const filter=`scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},setsar=1`;
-  const args=['-ss',String(start),'-i',inputName,'-t',String(end-start)];
+  const {w,h}=dimensions(),txt=$('text').value.trim(),transition=$('transition').value;
+  const clipDuration=end-start,fadeDuration=Math.min(0.6,clipDuration/3);
+  const baseFilter=`scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},setsar=1`;
+  const fadeFilters=[];
+  if(transition==='fadein'||transition==='both')fadeFilters.push(`fade=t=in:st=0:d=${fadeDuration}`);
+  if(transition==='fadeout'||transition==='both')fadeFilters.push(`fade=t=out:st=${Math.max(0,clipDuration-fadeDuration)}:d=${fadeDuration}`);
+  const args=['-ss',String(start),'-i',inputName,'-t',String(clipDuration)];
   if(txt){
    const pngBytes=await makeOverlayPNG(w,h);
    await ffmpeg.writeFile('overlay.png',new Uint8Array(pngBytes));
-   args.push('-loop','1','-framerate','25','-i','overlay.png',
-    '-filter_complex',`[0:v]${filter}[base];[base][1:v]overlay=0:0:shortest=1,format=yuv420p[vout]`,
+   const videoChain=`[0:v]${baseFilter}[base];[base][1:v]overlay=0:0:shortest=1${fadeFilters.length?','+fadeFilters.join(','):''},format=yuv420p[vout]`;
+   args.push('-loop','1','-framerate','25','-i','overlay.png','-filter_complex',videoChain,
     '-map','[vout]','-map','0:a?','-shortest');
   }else{
+   const filter=baseFilter+(fadeFilters.length?','+fadeFilters.join(','):'');
    args.push('-vf',filter,'-map','0:v:0','-map','0:a?');
   }
   args.push('-c:v','libx264','-preset','ultrafast','-crf','25','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-movflags','+faststart','output.mp4');
-  setStatus(txt?'Mengekspor video dan menanamkan teks PNG…':'Mengekspor video…');
+  setStatus(txt?'Mengekspor video, teks, dan transisi…':'Mengekspor video dengan transisi…');
   await ffmpeg.exec(args);
   const data=await ffmpeg.readFile('output.mp4');if(!data||!data.length)throw new Error('FFmpeg tidak menghasilkan file MP4.');
   const blob=new Blob([data.buffer],{type:'video/mp4'});if(outputUrl)URL.revokeObjectURL(outputUrl);outputUrl=URL.createObjectURL(blob);
